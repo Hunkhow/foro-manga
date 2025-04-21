@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Gestión de Perfiles – Foro Manga{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h1>Todos los Perfiles</h1>
+  <table class="table table-hover mt-3">
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Privado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in profiles %}
+      <tr>
+        <td>{{ p.user.username }}</td>
+        <td>{{ p.is_private|yesno:"Sí,No" }}</td>
+        <td>
+          <a href="{% url 'users:profile_detail' p.user.username %}"
+             class="btn btn-sm btn-info">
+            Ver
+          </a>
+          <a href="{% url 'users:profile_delete' p.pk %}"
+             class="btn btn-sm btn-danger">
+            Eliminar
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+  <nav aria-label="Paginación">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+            « Anterior
+          </a>
+        </li>
+      {% endif %}
+      <li class="page-item disabled">
+        <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+      </li>
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+            Siguiente »
+          </a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

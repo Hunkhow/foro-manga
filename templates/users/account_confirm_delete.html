@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Eliminar cuenta{% endblock %}
+{% block content %}
+<h2>Eliminar mi cuenta</h2>
+<p>¿Estás seguro? Esta acción no se puede deshacer.</p>
+<form method="post">
+  {% csrf_token %}
+  <button class="btn btn-danger">Sí, bórrala</button>
+  <a href="{% url 'home' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

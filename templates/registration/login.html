@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% load form_tags %}
+{% block title %}Iniciar sesión – Foro Manga{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <h2 class="mb-4">Iniciar sesión</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form.username.label_tag }}
+      {{ form.username|add_class:"form-control mb-3" }}
+
+      {{ form.password.label_tag }}
+      {{ form.password|add_class:"form-control mb-3" }}
+
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <button type="submit" class="btn btn-primary w-100">Entrar</button>
+    </form>
+
+    <!-- Olvidé mi contraseña -->
+    <p class="mt-3 text-center">
+      <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+    </p>
+
+    <p class="mt-2 text-center">
+      ¿No tienes cuenta? <a href="{% url 'users:signup' %}">Regístrate</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

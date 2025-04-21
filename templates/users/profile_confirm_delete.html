@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Eliminar Perfil – Foro Manga{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h1>Eliminar Perfil</h1>
+  <p>
+    ¿Seguro que deseas eliminar el perfil de
+    <strong>{{ object.user.username }}</strong>?
+    Esto también eliminará al usuario.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">
+      Sí, eliminar
+    </button>
+    <a href="{% url 'users:profile_list' %}" class="btn btn-secondary">
+      Cancelar
+    </a>
+  </form>
+</div>
+{% endblock %}
