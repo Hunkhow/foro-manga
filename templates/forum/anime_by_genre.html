@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Animes por Género – Foro Manga{% endblock %}
+
+{% block content %}
+  <h1 class="mb-4">Animes del género {{ genre. }}</h1>
+
+  {# Formulario de búsqueda #}
+  <form method="get" class="mb-4">
+    <div class="input-group">
+      <input type="text"
+             name="q"
+             value="{{ q }}"
+             placeholder="Buscar anime en este género…"
+             class="form-control">
+      <button class="btn btn-outline-secondary" type="submit">
+        🔍
+      </button>
+    </div>
+  </form>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div class="row g-3">
+    {% for anime in animes %}
+      <div class="col-md-3">
+        <div class="card h-100">
+          {% if anime.images.jpg.image_url %}
+            <img src="{{ anime.images.jpg.image_url }}"
+                 class="card-img-top"
+                 alt="{{ anime.title }}">
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ anime.title }}</h5>
+            <p class="card-text">{{ anime.synopsis|truncatechars:100 }}</p>
+          </div>
+          <div class="card-footer text-muted">
+            ⭐ {{ anime.score }}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="alert alert-info">No se encontraron animes.</div>
+    {% endfor %}
+  </div>
+
+  {# Paginación #}
+  {% if page_obj.has_other_pages %}
+    <nav aria-label="Paginación de animes">
+      <ul class="pagination justify-content-center mt-4">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?q={{ q }}&page={{ page_obj.previous_page_number }}">
+              « Anterior
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">« Anterior</span></li>
+        {% endif %}
+
+        <li class="page-item active">
+          <span class="page-link">
+            {{ page_obj.number }} / {{ paginator.num_pages }}
+          </span>
+        </li>
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link"
+               href="?q={{ q }}&page={{ page_obj.next_page_number }}">
+              Siguiente »
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente »</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% endblock %}

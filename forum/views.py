@@ -1,11 +1,17 @@
-from .models import Thread
-from django.views.generic import ListView, DetailView, TemplateView, CreateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Thread, Post, Manga, Upvote
-from django.urls import reverse_lazy, reverse
-from django.db.models import Count
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic import (
+    ListView, DetailView, TemplateView,
+    CreateView, UpdateView, DeleteView
+)
+from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
+from django.db.models import Count
+
+from .models import Thread, Post, Upvote
+from django.urls import reverse_lazy, reverse
+from django.contrib.auth.decorators import login_required
+from .services import fetch_genres, fetch_anime_by_genre, JikanError
+from django.core.paginator import Paginator
 
 class HomeView(TemplateView):
     template_name = "home.html"
@@ -67,6 +73,30 @@ class ThreadCreateView(LoginRequiredMixin, CreateView):
         form.instance.author = self.request.user
         return super().form_valid(form)
 
+class ThreadUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Thread
+    fields = ['title', 'content', 'manga', 'tags']
+    template_name = "forum/thread_form.html"
+    login_url = 'login'
+    raise_exception = True
+
+    def test_func(self):
+        t = self.get_object()
+        return (self.request.user.is_staff
+                or t.author == self.request.user)
+
+class ThreadDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Thread
+    template_name = "forum/thread_confirm_delete.html"
+    success_url = reverse_lazy('home')
+    login_url = 'login'
+    raise_exception = True
+
+    def test_func(self):
+        t = self.get_object()
+        return (self.request.user.is_staff
+                or t.author == self.request.user)
+    
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     fields = ['content']
@@ -74,9 +104,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     login_url = 'login'
 
     def get_context_data(self, **kwargs):
-        # 1) Aceptamos **kwargs
         context = super().get_context_data(**kwargs)
-        # 2) Inyectamos el thread en el contexto para el template
         context['thread'] = Thread.objects.get(slug=self.kwargs['slug'])
         return context
 
@@ -102,3 +130,112 @@ def post_upvote_toggle(request, pk):
         request.META.get('HTTP_REFERER')
         or reverse('forum:thread-detail', kwargs={'slug': post.thread.slug})
     )
+
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Post
+    fields = ['content']
+    template_name = "forum/post_form.html"
+    login_url = 'login'
+    raise_exception = True
+
+    def test_func(self):
+        p = self.get_object()
+        return (
+            self.request.user.is_staff
+            or p.author == self.request.user
+            or p.thread.author == self.request.user
+        )
+
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Post
+    template_name = "forum/post_confirm_delete.html"
+
+    def get_success_url(self):
+        # Al borrar una respuesta, volvemos al detalle de su hilo
+        return reverse_lazy(
+            "forum:thread-detail",
+            kwargs={"slug": self.object.thread.slug}
+        )
+
+    def test_func(self):
+        post = self.get_object()
+        user = self.request.user
+        # Puede borrar si es autor del post, autor del hilo o staff
+        return (
+            user == post.author or
+            user == post.thread.author or
+            user.is_staff
+        )
+
+class AnimeGenreListView(TemplateView):
+    template_name = "forum/genre_list.html"
+    paginate_by = 10  # géneros por página
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        # 1) Traemos todos los géneros de anime
+        try:
+            genres = fetch_genres("anime")
+        except JikanError as e:
+            genres = []
+            ctx["error"] = str(e)
+
+        # 2) Filtrado por búsqueda
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            genres = [g for g in genres if q.lower() in g["name"].lower()]
+        ctx["q"] = q
+
+        # 3) Paginación manual
+        paginator = Paginator(genres, self.paginate_by)
+        page = self.request.GET.get("page")
+        page_obj = paginator.get_page(page)
+
+        ctx["genres"]   = page_obj.object_list
+        ctx["page_obj"] = page_obj
+        ctx["paginator"] = paginator
+
+        return ctx
+
+
+class AnimeListByGenreView(TemplateView):
+    template_name = "forum/anime_by_genre.html"
+    paginate_by = 12  # animes por página
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        genre_id = self.kwargs["genre_id"]
+
+        # 1) Traer todos los animes del género (limit amplio)
+        try:
+            all_animes = fetch_anime_by_genre(genre_id, page=1, limit=25)
+        except JikanError as e:
+            ctx["animes"] = []
+            ctx["error"] = str(e)
+            return ctx
+
+        # 2) Filtrado por búsqueda
+        q = self.request.GET.get("q", "").strip()
+        if q:
+            filtered = [
+                a for a in all_animes
+                if q.lower() in a.get("title", "").lower()
+            ]
+        else:
+            filtered = all_animes
+        ctx["q"] = q
+
+        # 3) Paginación local
+        paginator = Paginator(filtered, self.paginate_by)
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        ctx["animes"]   = page_obj.object_list
+        ctx["page_obj"] = page_obj
+        ctx["paginator"] = paginator
+        ctx["genre_id"] = genre_id  
+
+        return ctx
+
+

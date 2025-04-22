@@ -35,6 +35,9 @@ urlpatterns = [
 
     # Registro y perfil (signup, profile_detail, profile_edit, account_delete…)
     path('accounts/', include(('users.urls', 'users'), namespace='users')),
+    
+    # API path
+    path('api/', include(('forum.api.urls', 'forum.api'), namespace='forum-api')),
 ]
 
 if settings.DEBUG:

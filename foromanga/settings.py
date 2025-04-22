@@ -37,8 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'users.apps.UsersConfig',
     'forum.apps.ForumConfig'
+    
 ]
 
 MIDDLEWARE = [
@@ -141,3 +143,12 @@ EMAIL_HOST_PASSWORD = 'f08ec2857865fd'    # tu “Password” de Mailtrap
 EMAIL_PORT          = 2525                       # ó 2525/25
 EMAIL_USE_TLS       = True                       # STARTTLS requerido
 DEFAULT_FROM_EMAIL  = 'Foro Manga no-reply@demomailtrap.co'
+
+# URL base para api de jikan
+JIKAN_BASE_URL = 'https://api.jikan.moe/v4'
+
+# REST FRAMEWORK settings
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}

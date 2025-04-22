@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Borrar hilo – Foro Manga{% endblock %}
+{% block content %}
+  <h2>¿Seguro que quieres borrar este hilo?</h2>
+  <p><strong>{{ object.title }}</strong></p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Sí, borrar</button>
+    <a href="{% url 'forum:thread-detail' object.slug %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+{% endblock %}
